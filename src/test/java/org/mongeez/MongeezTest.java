@@ -14,24 +14,25 @@ package org.mongeez;
 
 import static org.testng.Assert.assertEquals;
 
-import com.mongodb.DB;
-import com.mongodb.DBCursor;
-import com.mongodb.Mongo;
-
 import org.mongeez.validation.ValidationException;
 import org.springframework.core.io.ClassPathResource;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import com.mongodb.DB;
+import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
+
 @Test
 public class MongeezTest {
-    private String dbName = "test_mongeez";
+    private String mongoHost = System.getProperty("mongo.host", "localhost");
+    private String dbName = System.getProperty("mongo.dbname", "test_mongeez");
     private Mongo mongo;
     private DB db;
 
     @BeforeMethod
     protected void setUp() throws Exception {
-        mongo = new Mongo();
+        mongo = new Mongo(mongoHost);
         db = mongo.getDB(dbName);
 
         db.dropDatabase();
@@ -46,7 +47,7 @@ public class MongeezTest {
     }
 
     private Mongeez createWithMongoClient(String path) {
-        MongoClient mongoClient = new MongoClient();
+        MongoClient mongoClient = new MongoClient(mongoHost);
         db = mongoClient.getDB(dbName);
         db.dropDatabase();
 
