@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at  http://www.apache.org/licenses/LICENSE-2.0
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -45,6 +45,18 @@ public class MongeezTest {
         return mongeez;
     }
 
+    private Mongeez createWithMongoClient(String path) {
+        MongoClient mongoClient = new MongoClient();
+        db = mongoClient.getDB(dbName);
+        db.dropDatabase();
+
+        Mongeez mongeez = new Mongeez();
+        mongeez.setFile(new ClassPathResource(path));
+        mongeez.setMongoClient(mongoClient);
+        mongeez.setDbName(dbName);
+        return mongeez;
+    }
+
     @Test(groups = "dao")
     public void testMongeez() throws Exception {
         Mongeez mongeez = create("mongeez.xml");
@@ -61,6 +73,18 @@ public class MongeezTest {
     public void testRunTwice() throws Exception {
         testMongeez();
         testMongeez();
+    }
+
+    @Test(groups = "dao")
+    public void testMongeezWithMongoClient() throws Exception {
+        Mongeez mongeez = createWithMongoClient("mongeez.xml");
+
+        mongeez.process();
+
+        assertEquals(db.getCollection("mongeez").count(), 5);
+
+        assertEquals(db.getCollection("organization").count(), 2);
+        assertEquals(db.getCollection("user").count(), 2);
     }
 
     @Test(groups = "dao")

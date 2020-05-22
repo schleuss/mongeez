@@ -3,8 +3,8 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at  http://www.apache.org/licenses/LICENSE-2.0
- *  
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and limitations under the License.
@@ -17,6 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.bson.BsonDocument;
 import org.mongeez.MongoAuth;
 import org.mongeez.commands.ChangeSet;
 
@@ -26,6 +27,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoCommandException;
 import com.mongodb.MongoCredential;
 import com.mongodb.QueryBuilder;
 import com.mongodb.WriteConcern;
@@ -33,6 +35,11 @@ import com.mongodb.WriteConcern;
 public class MongeezDao {
     private DB db;
     private List<ChangeSetAttribute> changeSetAttributes;
+
+    public MongeezDao(MongoClient mongoClient, String databaseName) {
+        db = mongoClient.getDB(databaseName);
+        configure();
+    }
 
     public MongeezDao(Mongo mongo, String databaseName) {
         this(mongo, databaseName, null);
@@ -49,7 +56,7 @@ public class MongeezDao {
             }
         }
 
-        final MongoClient client = new MongoClient(mongo.getServerAddressList(),  credentials);
+        final MongoClient client = new MongoClient(mongo.getServerAddressList(), credentials);
         db = client.getDB(databaseName);
         configure();
     }
@@ -73,15 +80,9 @@ public class MongeezDao {
         if (configRecord == null) {
             if (getMongeezCollection().count() > 0L) {
                 // We have pre-existing records, so don't assume that they support the latest features
-                configRecord =
-                        new BasicDBObject()
-                                .append("type", RecordType.configuration.name())
-                                .append("supportResourcePath", false);
+                configRecord = new BasicDBObject().append("type", RecordType.configuration.name()).append("supportResourcePath", false);
             } else {
-                configRecord =
-                        new BasicDBObject()
-                                .append("type", RecordType.configuration.name())
-                                .append("supportResourcePath", true);
+                configRecord = new BasicDBObject().append("type", RecordType.configuration.name()).append("supportResourcePath", true);
             }
             getMongeezCollection().insert(configRecord, WriteConcern.SAFE);
         }

@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at  http://www.apache.org/licenses/LICENSE-2.0
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -12,6 +12,9 @@
 
 package org.mongeez;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.mongeez.commands.ChangeSet;
 import org.mongeez.commands.Script;
 import org.mongeez.reader.ChangeSetFileProvider;
@@ -19,16 +22,12 @@ import org.mongeez.reader.ChangeSetReaderFactory;
 import org.mongeez.reader.FilesetXMLChangeSetFileProvider;
 import org.mongeez.validation.ChangeSetsValidator;
 import org.mongeez.validation.DefaultChangeSetsValidator;
-
-import com.mongodb.Mongo;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 
 public class Mongeez {
     private final static Logger logger = LoggerFactory.getLogger(Mongeez.class);
@@ -36,13 +35,21 @@ public class Mongeez {
     private Mongo mongo = null;
     private String dbName;
     private MongoAuth auth = null;
+    private MongoClient mongoClient = null;
     private ChangeSetFileProvider changeSetFileProvider = null;
     private ChangeSetsValidator changeSetsValidator = new DefaultChangeSetsValidator();
     private String context = null;
 
     public void process() {
         List<ChangeSet> changeSets = getChangeSets();
-        new ChangeSetExecutor(mongo, dbName, context, auth).execute(changeSets);
+
+        if (mongo != null) {
+            new ChangeSetExecutor(mongo, dbName, context, auth).execute(changeSets);
+        } else if (mongoClient != null) {
+            new ChangeSetExecutor(mongoClient, dbName, context).execute(changeSets);
+        } else {
+            throw new IllegalStateException("Neither mongo nor mongoClient has been configured!");
+        }
     }
 
     private List<ChangeSet> getChangeSets() {
@@ -64,7 +71,7 @@ public class Mongeez {
                 logger.trace("Changeset");
                 logger.trace("id: " + changeSet.getChangeId());
                 logger.trace("author: " + changeSet.getAuthor());
-                if (! "".equals(changeSet.getContexts())) {
+                if (!"".equals(changeSet.getContexts())) {
                     logger.trace("contexts: {}", changeSet.getContexts());
                 }
                 for (Script command : changeSet.getCommands()) {
@@ -81,6 +88,10 @@ public class Mongeez {
 
     public void setDbName(String dbName) {
         this.dbName = dbName;
+    }
+
+    public void setMongoClient(MongoClient mongoClient) {
+        this.mongoClient = mongoClient;
     }
 
     public void setAuth(MongoAuth auth) {
