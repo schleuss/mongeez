@@ -65,7 +65,8 @@ public class ChangeSetExecutor {
             }
         } catch (RuntimeException e) {
             if (changeSet.isFailOnError()) {
-                throw new RuntimeException("ChangeSet " + changeSet.getChangeId() + " has failed. File " + changeSet.getFile(), e);
+                logger.error("ChangeSet " + changeSet.getChangeId() + " has failed. File " + changeSet.getFile());
+                throw e;
             } else {
                 logger.warn("ChangeSet " + changeSet.getChangeId() + " has failed, but failOnError is set to false", e.getMessage());
             }
