@@ -133,7 +133,23 @@ public class MongeezDao {
     }
 
     public void runScript(String code) {
-        db.eval(code);
+        final Object retVal = db.eval(code);
+
+        if (retVal instanceof BasicDBObject && !ok((BasicDBObject) retVal)) {
+            BsonDocument doc = BsonDocument.parse(((BasicDBObject) retVal).toJson());
+            throw new MongoCommandException(doc, db.getMongoClient().getServerAddressList().get(0));
+        }
+    }
+
+    private boolean ok(BasicDBObject retVal) {
+        Object okValue = retVal.get("ok");
+        if (okValue instanceof Boolean) {
+            return (Boolean) okValue;
+        } else if (okValue instanceof Number) {
+            return ((Number) okValue).intValue() == 1;
+        }
+        // don't have ok value
+        return true;
     }
 
     public void logChangeSet(ChangeSet changeSet) {
